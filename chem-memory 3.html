@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>化学 暗記アプリ</title>
+<style>
+:root{
+  --bg:#f7f5f2; --card:#ffffff; --ink:#2b2b2b; --sub:#6b6b6b;
+  --accent:#3f6b4f; --accent2:#a35d3f; --line:#e3ddd3;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c1b19; --card:#2a2825; --ink:#eee8df; --sub:#a89f91;
+    --accent:#6fae86; --accent2:#d99a76; --line:#3a3733;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c1b19; --card:#2a2825; --ink:#eee8df; --sub:#a89f91;
+  --accent:#6fae86; --accent2:#d99a76; --line:#3a3733;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  display:flex; flex-direction:column; align-items:center;
+  padding:16px; padding-top:calc(16px + env(safe-area-inset-top,0px));
+}
+h1{font-size:1.15rem; margin:4px 0 12px; text-align:center;}
+.wrap{width:100%; max-width:480px;}
+.stats{display:flex; gap:8px; margin-bottom:12px; font-size:.8rem; color:var(--sub);}
+.stats span{background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; flex:1; text-align:center;}
+.legend{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:.78rem; color:var(--sub); margin-bottom:12px; line-height:1.7;}
+.legend b{color:var(--ink);}
+.filters{display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;}
+.filters label{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:6px 12px; font-size:.8rem; cursor:pointer; user-select:none;}
+.filters input{margin-right:4px;}
+.card{
+  background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:28px 20px; min-height:180px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:10px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+}
+.tag{font-size:.72rem; color:var(--sub); letter-spacing:.05em;}
+.q{font-size:1.5rem; font-weight:600; line-height:1.4;}
+.a{font-size:1.6rem; font-weight:700; color:var(--accent); line-height:1.4;}
+.hint{font-size:.75rem; color:var(--sub);}
+button{
+  font-family:inherit; border:none; border-radius:10px; padding:12px 16px;
+  font-size:.95rem; cursor:pointer; background:var(--accent); color:#fff;
+}
+.showbtn{width:100%; margin-top:18px;}
+.rategrid{display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; margin-top:16px;}
+.rategrid button{padding:14px 8px; font-size:.85rem;}
+.r0{background:#b0503f;} .r1{background:#c98a3f;} .r2{background:#3f8b6b;} .r3{background:#2f6b93;}
+.footer{display:flex; justify-content:space-between; margin-top:16px;}
+.linkbtn{background:transparent; color:var(--sub); font-size:.78rem; text-decoration:underline; padding:6px;}
+.empty{font-size:.95rem; color:var(--sub);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🧪 元素・化学式・イオン式 暗記帳</h1>
+<div class="legend">
+  <div><b>元素記号</b>：元素そのものを表す記号(原子1個)。例 Na, Cl, Fe</div>
+  <div><b>分子式</b>：分子からなる物質を、原子の種類と数で表す式。例 H₂O, CO₂, NH₃</div>
+  <div><b>組成式</b>：分子を作らない物質(イオン結晶・金属)を、最も簡単な原子の比で表す式。例 NaCl, CaCO₃, MgO</div>
+  <div><b>イオン式</b>：イオンを表す式。電荷(＋/－)を伴う。例 Na⁺, Cl⁻, SO₄²⁻</div>
+  <div><b>構造式</b>：原子の結合を線(価標)で表した式。例 H-O-H, O=C=O</div>
+</div>
+<div class="stats">
+  <span id="stDue">待機 -</span>
+  <span id="stTotal">全体 -</span>
+  <span id="stMaster">習得 -</span>
+</div>
+<div class="filters">
+  <label><input type="checkbox" data-c="elem" checked>元素記号</label>
+  <label><input type="checkbox" data-c="formula" checked>化学式</label>
+  <label><input type="checkbox" data-c="ion" checked>イオン式</label>
+  <label><input type="checkbox" data-c="kind" checked>判別</label>
+</div>
+<div class="card" id="card"></div>
+<div class="footer">
+  <button class="linkbtn" id="resetBtn">進捗をリセット</button>
+  <span class="hint" id="dueTime"></span>
+</div>
+</div>
+<script>
+const ELEMENTS=[["H","水素"],["He","ヘリウム"],["Li","リチウム"],["C","炭素"],["N","窒素"],["O","酸素"],["F","フッ素"],["Ne","ネオン"],["Na","ナトリウム"],["Mg","マグネシウム"],["Al","アルミニウム"],["Si","ケイ素"],["P","リン"],["S","硫黄"],["Cl","塩素"],["Ar","アルゴン"],["K","カリウム"],["Ca","カルシウム"]];
+const FORMULAS=[["水","H₂O"],["二酸化炭素","CO₂"],["水素","H₂"],["酸素","O₂"],["窒素","N₂"],["塩素","Cl₂"],["塩化水素","HCl"],["アンモニア","NH₃"],["塩化ナトリウム","NaCl"],["水酸化ナトリウム","NaOH"],["炭酸水素ナトリウム","NaHCO₃"],["炭酸カルシウム","CaCO₃"],["水酸化カルシウム","Ca(OH)₂"],["酸化銅(Ⅱ)","CuO"],["酸化マグネシウム","MgO"],["塩化銅(Ⅱ)","CuCl₂"],["硫化銅(Ⅱ)","CuS"],["硫化鉄(Ⅱ)","FeS"]];
+const IONS=[["水素イオン","H⁺"],["リチウムイオン","Li⁺"],["ナトリウムイオン","Na⁺"],["カリウムイオン","K⁺"],["銅(I)イオン","Cu⁺"],["銀イオン","Ag⁺"],["アンモニウムイオン","NH₄⁺"],["カルシウムイオン","Ca²⁺"],["バリウムイオン","Ba²⁺"],["亜鉛イオン","Zn²⁺"],["鉄(Ⅱ)イオン","Fe²⁺"],["銅(Ⅱ)イオン","Cu²⁺"],["アルミニウムイオン","Al³⁺"],["鉄(Ⅲ)イオン","Fe³⁺"],["フッ化物イオン","F⁻"],["塩化物イオン","Cl⁻"],["臭化物イオン","Br⁻"],["ヨウ化物イオン","I⁻"],["水酸化物イオン","OH⁻"],["硝酸イオン","NO₃⁻"],["炭酸水素イオン","HCO₃⁻"],["酢酸イオン","CH₃COO⁻"],["酸化物イオン","O²⁻"],["硫化物イオン","S²⁻"],["炭酸イオン","CO₃²⁻"],["硫酸イオン","SO₄²⁻"],["リン酸イオン","PO₄³⁻"]];
+
+const KIND=[["Na","元素記号(原子1個の記号) ／ ナトリウム"],["Cl","元素記号(原子1個の記号) ／ 塩素"],["Fe","元素記号(原子1個の記号) ／ 鉄"],["O","元素記号(原子1個の記号) ／ 酸素"],["H₂O","分子式(分子からなる物質を表す) ／ 水"],["CO₂","分子式(分子からなる物質を表す) ／ 二酸化炭素"],["NH₃","分子式(分子からなる物質を表す) ／ アンモニア"],["NaCl","組成式(イオン結晶を最も簡単な比で表す) ／ 塩化ナトリウム"],["CaCO₃","組成式(イオン結晶を最も簡単な比で表す) ／ 炭酸カルシウム"],["MgO","組成式(イオン結晶を最も簡単な比で表す) ／ 酸化マグネシウム"],["Na⁺","イオン式(電荷＋がある単原子イオン) ／ ナトリウムイオン"],["Cl⁻","イオン式(電荷－がある単原子イオン) ／ 塩化物イオン"],["SO₄²⁻","イオン式(電荷2－がある多原子イオン) ／ 硫酸イオン"],["NH₄⁺","イオン式(電荷＋がある多原子イオン) ／ アンモニウムイオン"],["H-O-H","構造式(原子間の結合を線で表す) ／ 水"],["O=C=O","構造式(二重結合を線2本で表す) ／ 二酸化炭素"],["H-Cl","構造式(単結合を線1本で表す) ／ 塩化水素"],["N≡N","構造式(三重結合を線3本で表す) ／ 窒素"]];
+const CATS=[["elem","元素記号",ELEMENTS],["formula","化学式",FORMULAS],["ion","イオン式",IONS],["kind","判別",KIND]];
+let ITEMS=[];
+CATS.forEach(([key,label,arr])=>{
+  arr.forEach((pair,i)=>{ ITEMS.push({id:key+"-"+i, cat:key, label, a:pair[0], b:pair[1]}); });
+});
+
+const STAGE_DAYS=[0.007,1,2,4,7,15,30,60]; // エビングハウス風の復習間隔(日)
+const MAXSTAGE=STAGE_DAYS.length-1;
+const DAY=86400000;
+
+function loadState(){ try{return JSON.parse(localStorage.getItem('chemSRS')||'{}');}catch(e){return {};} }
+function saveState(s){ try{localStorage.setItem('chemSRS', JSON.stringify(s));}catch(e){} }
+let state = loadState();
+
+let activeCats = ['elem','formula','ion','kind'];
+let current = null, showingAnswer = false, currentDir = true;
+
+function pool(){ return ITEMS.filter(i=>activeCats.includes(i.cat)); }
+
+function ensure(item){
+  if(!state[item.id]) state[item.id] = {stage:0, due:0};
+  return state[item.id];
+}
+
+function pickCard(){
+  const p = pool();
+  if(p.length===0) return null;
+  const now = Date.now();
+  const due = p.filter(i=>ensure(i).due<=now);
+  if(due.length>0){ return due[Math.floor(Math.random()*due.length)]; }
+  // 何も期限が来ていなければ、一番早く来る予定のものを見せる
+  p.sort((x,y)=>ensure(x).due-ensure(y).due);
+  return p[0];
+}
+
+function fmt(ms){
+  if(ms<=0) return "今";
+  const days = ms/DAY;
+  if(days<1) return Math.round(days*24)+"時間後";
+  return Math.round(days)+"日後";
+}
+
+function render(){
+  const p = pool();
+  const now = Date.now();
+  const dueCount = p.filter(i=>ensure(i).due<=now).length;
+  const masterCount = p.filter(i=>ensure(i).stage>=MAXSTAGE).length;
+  document.getElementById('stDue').textContent = "待機 "+dueCount;
+  document.getElementById('stTotal').textContent = "全体 "+p.length;
+  document.getElementById('stMaster').textContent = "習得 "+masterCount;
+
+  const cardEl = document.getElementById('card');
+  const dueTimeEl = document.getElementById('dueTime');
+  if(p.length===0){
+    cardEl.innerHTML = '<div class="empty">カテゴリを1つ以上選んでください</div>';
+    dueTimeEl.textContent = '';
+    current = null;
+    return;
+  }
+  if(!current || !pool().includes(current)) current = pickCard();
+  const st = ensure(current);
+  showingAnswer = false;
+  currentDir = current.cat==='kind' ? true : Math.random()<0.5;
+  const front = currentDir ? current.a : current.b;
+  const back = currentDir ? current.b : current.a;
+
+  dueTimeEl.textContent = st.due<=now? '復習期限：今' : ('次回：'+fmt(st.due-now));
+
+  const askKind = current.cat==='kind';
+  cardEl.innerHTML =
+    '<div class="tag">'+(askKind?'これは何？':current.label)+'</div>'+
+    '<div class="q">'+front+'</div>'+
+    '<button class="showbtn" id="showBtn">答えを見る</button>';
+  document.getElementById('showBtn').onclick = ()=>reveal(back);
+}
+
+function reveal(back){
+  const cardEl = document.getElementById('card');
+  cardEl.innerHTML =
+    '<div class="tag">'+current.label+'</div>'+
+    '<div class="q">'+ (currentDir? current.a:current.b) +'</div>'+
+    '<div class="a">'+back+'</div>'+
+    '<div class="rategrid">'+
+      '<button class="r0" data-q="0">もう一度<br><span style="font-size:.7em">(直後)</span></button>'+
+      '<button class="r1" data-q="1">難しい<br><span style="font-size:.7em">(同間隔)</span></button>'+
+      '<button class="r2" data-q="2">普通<br><span style="font-size:.7em">(次段階へ)</span></button>'+
+      '<button class="r3" data-q="3">簡単<br><span style="font-size:.7em">(2段階飛ばす)</span></button>'+
+    '</div>';
+  cardEl.querySelectorAll('.rategrid button').forEach(b=>{
+    b.onclick = ()=>rate(parseInt(b.dataset.q));
+  });
+}
+
+function rate(q){
+  const st = ensure(current);
+  if(q===0){ st.stage=0; }
+  else if(q===1){ /* 段階据え置き */ }
+  else if(q===2){ st.stage=Math.min(st.stage+1, MAXSTAGE); }
+  else if(q===3){ st.stage=Math.min(st.stage+2, MAXSTAGE); }
+  const mult = q===3?1.3:1;
+  st.due = Date.now() + STAGE_DAYS[st.stage]*DAY*mult;
+  saveState(state);
+  current = null;
+  render();
+}
+
+function init(){
+  try{
+    document.querySelectorAll('.filters input').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        activeCats = [...document.querySelectorAll('.filters input')].filter(c=>c.checked).map(c=>c.dataset.c);
+        current = null;
+        render();
+      });
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      if(confirm('全ての学習進捗を削除します。よろしいですか？')){
+        state = {}; saveState(state); current=null; render();
+      }
+    });
+    render();
+  }catch(e){
+    document.getElementById('card').innerHTML = '<div class="empty">エラー: '+e.message+'</div>';
+  }
+}
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
+
+</script>
+</body>
+</html>

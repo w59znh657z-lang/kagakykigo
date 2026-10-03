@@ -81,6 +81,8 @@ button{
   <label><input type="checkbox" data-c="formula" checked>化学式</label>
   <label><input type="checkbox" data-c="ion" checked>イオン式</label>
   <label><input type="checkbox" data-c="kind" checked>判別</label>
+  <label><input type="checkbox" data-c="polar" checked>極性</label>
+  <label><input type="checkbox" data-c="comp" checked>組成式づくり</label>
 </div>
 <div class="card" id="card"></div>
 <div class="footer">
@@ -94,7 +96,9 @@ const FORMULAS=[["水","H₂O"],["二酸化炭素","CO₂"],["水素","H₂"],["
 const IONS=[["水素イオン","H⁺"],["リチウムイオン","Li⁺"],["ナトリウムイオン","Na⁺"],["カリウムイオン","K⁺"],["銅(I)イオン","Cu⁺"],["銀イオン","Ag⁺"],["アンモニウムイオン","NH₄⁺"],["カルシウムイオン","Ca²⁺"],["バリウムイオン","Ba²⁺"],["亜鉛イオン","Zn²⁺"],["鉄(Ⅱ)イオン","Fe²⁺"],["銅(Ⅱ)イオン","Cu²⁺"],["アルミニウムイオン","Al³⁺"],["鉄(Ⅲ)イオン","Fe³⁺"],["フッ化物イオン","F⁻"],["塩化物イオン","Cl⁻"],["臭化物イオン","Br⁻"],["ヨウ化物イオン","I⁻"],["水酸化物イオン","OH⁻"],["硝酸イオン","NO₃⁻"],["炭酸水素イオン","HCO₃⁻"],["酢酸イオン","CH₃COO⁻"],["酸化物イオン","O²⁻"],["硫化物イオン","S²⁻"],["炭酸イオン","CO₃²⁻"],["硫酸イオン","SO₄²⁻"],["リン酸イオン","PO₄³⁻"]];
 
 const KIND=[["Na","元素記号(原子1個の記号) ／ ナトリウム"],["Cl","元素記号(原子1個の記号) ／ 塩素"],["Fe","元素記号(原子1個の記号) ／ 鉄"],["O","元素記号(原子1個の記号) ／ 酸素"],["H₂O","分子式(分子からなる物質を表す) ／ 水"],["CO₂","分子式(分子からなる物質を表す) ／ 二酸化炭素"],["NH₃","分子式(分子からなる物質を表す) ／ アンモニア"],["NaCl","組成式(イオン結晶を最も簡単な比で表す) ／ 塩化ナトリウム"],["CaCO₃","組成式(イオン結晶を最も簡単な比で表す) ／ 炭酸カルシウム"],["MgO","組成式(イオン結晶を最も簡単な比で表す) ／ 酸化マグネシウム"],["Na⁺","イオン式(電荷＋がある単原子イオン) ／ ナトリウムイオン"],["Cl⁻","イオン式(電荷－がある単原子イオン) ／ 塩化物イオン"],["SO₄²⁻","イオン式(電荷2－がある多原子イオン) ／ 硫酸イオン"],["NH₄⁺","イオン式(電荷＋がある多原子イオン) ／ アンモニウムイオン"],["H-O-H","構造式(原子間の結合を線で表す) ／ 水"],["O=C=O","構造式(二重結合を線2本で表す) ／ 二酸化炭素"],["H-Cl","構造式(単結合を線1本で表す) ／ 塩化水素"],["N≡N","構造式(三重結合を線3本で表す) ／ 窒素"]];
-const CATS=[["elem","元素記号",ELEMENTS],["formula","化学式",FORMULAS],["ion","イオン式",IONS],["kind","判別",KIND]];
+const POLAR=[["水素 H₂","無極性分子(直線形、電荷の偏りなし)"],["塩素 Cl₂","無極性分子(直線形、電荷の偏りなし)"],["二酸化炭素 CO₂","無極性分子(直線形、極性が打ち消し合う)"],["メタン CH₄","無極性分子(正四面体形、極性が打ち消し合う)"],["水 H₂O","極性分子(折れ線形)"],["塩化水素 HCl","極性分子(直線形)"],["アンモニア NH₃","極性分子(三角錐形)"]];
+const COMP=[["Na⁺とCl⁻","NaCl(塩化ナトリウム)"],["Na⁺とOH⁻","NaOH(水酸化ナトリウム)"],["Na⁺とO²⁻","Na₂O(酸化ナトリウム)"],["Na⁺とSO₄²⁻","Na₂SO₄(硫酸ナトリウム)"],["Cu²⁺とCl⁻","CuCl₂(塩化銅(Ⅱ))"],["Cu²⁺とOH⁻","Cu(OH)₂(水酸化銅(Ⅱ))"],["Cu²⁺とO²⁻","CuO(酸化銅(Ⅱ))"],["Cu²⁺とSO₄²⁻","CuSO₄(硫酸銅(Ⅱ))"],["Al³⁺とCl⁻","AlCl₃(塩化アルミニウム)"],["Al³⁺とOH⁻","Al(OH)₃(水酸化アルミニウム)"],["Al³⁺とO²⁻","Al₂O₃(酸化アルミニウム)"],["Al³⁺とSO₄²⁻","Al₂(SO₄)₃(硫酸アルミニウム)"],["Ca²⁺とCl⁻","CaCl₂(塩化カルシウム)"],["Na⁺とCO₃²⁻","Na₂CO₃(炭酸ナトリウム)"],["Mg²⁺とOH⁻","Mg(OH)₂(水酸化マグネシウム)"],["NH₄⁺とSO₄²⁻","(NH₄)₂SO₄(硫酸アンモニウム)"],["Cu²⁺とNO₃⁻","Cu(NO₃)₂(硝酸銅(Ⅱ))"],["Ca²⁺とPO₄³⁻","Ca₃(PO₄)₂(リン酸カルシウム)"]];
+const CATS=[["elem","元素記号",ELEMENTS],["formula","化学式",FORMULAS],["ion","イオン式",IONS],["kind","判別",KIND],["polar","極性",POLAR],["comp","組成式づくり",COMP]];
 let ITEMS=[];
 CATS.forEach(([key,label,arr])=>{
   arr.forEach((pair,i)=>{ ITEMS.push({id:key+"-"+i, cat:key, label, a:pair[0], b:pair[1]}); });
@@ -108,7 +112,7 @@ function loadState(){ try{return JSON.parse(localStorage.getItem('chemSRS')||'{}
 function saveState(s){ try{localStorage.setItem('chemSRS', JSON.stringify(s));}catch(e){} }
 let state = loadState();
 
-let activeCats = ['elem','formula','ion','kind'];
+let activeCats = ['elem','formula','ion','kind','polar','comp'];
 let current = null, showingAnswer = false, currentDir = true;
 
 function pool(){ return ITEMS.filter(i=>activeCats.includes(i.cat)); }
@@ -156,15 +160,16 @@ function render(){
   if(!current || !pool().includes(current)) current = pickCard();
   const st = ensure(current);
   showingAnswer = false;
-  currentDir = current.cat==='kind' ? true : Math.random()<0.5;
+  const oneWay = ['kind','polar','comp'].includes(current.cat);
+  currentDir = oneWay ? true : Math.random()<0.5;
   const front = currentDir ? current.a : current.b;
   const back = currentDir ? current.b : current.a;
 
   dueTimeEl.textContent = st.due<=now? '復習期限：今' : ('次回：'+fmt(st.due-now));
 
-  const askKind = current.cat==='kind';
+  const tagText = current.cat==='kind'?'これは何？':current.cat==='polar'?'極性 or 無極性？':current.cat==='comp'?'組成式は？':current.label;
   cardEl.innerHTML =
-    '<div class="tag">'+(askKind?'これは何？':current.label)+'</div>'+
+    '<div class="tag">'+tagText+'</div>'+
     '<div class="q">'+front+'</div>'+
     '<button class="showbtn" id="showBtn">答えを見る</button>';
   document.getElementById('showBtn').onclick = ()=>reveal(back);
